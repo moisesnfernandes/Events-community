@@ -1,0 +1,90 @@
+[
+  {
+    "id": 1,
+    "title": "The Way",
+    "artist": "Ariana Grande Ft. Mac Miller",
+    "duration": "3:34",
+    "thumbnail": "https://via.placeholder.com/300x300?text=The+Way",
+    "videoPreview": "https://www.youtube.com/embed/Mo7lqGkoDYM",
+    "category": "NEW",
+    "version": "JD2024",
+    "type": "solo"
+  },
+  {
+    "id": 2,
+    "title": "Ghostbusters",
+    "artist": "Ray Parker Jr.",
+    "duration": "4:02",
+    "thumbnail": "https://via.placeholder.com/300x300?text=Ghostbusters",
+    "videoPreview": "https://www.youtube.com/embed/m9We2kGWmFQ",
+    "category": "NEW",
+    "version": "JD2023",
+    "type": "dupla"
+  },
+  {
+    "id": 3,
+    "title": "Time Warp",
+    "artist": "Rocky Horror Picture Show",
+    "duration": "4:34",
+    "thumbnail": "https://via.placeholder.com/300x300?text=Time+Warp",
+    "videoPreview": "https://www.youtube.com/embed/h8zKvmYYN9w",
+    "category": "NEW",
+    "version": "JD2022",
+    "type": "quarteto"
+  },
+  {
+    "id": 4,
+    "title": "Levantando a Poeira",
+    "artist": "Zé Ramalho",
+    "duration": "3:45",
+    "thumbnail": "https://via.placeholder.com/300x300?text=Levantando",
+    "videoPreview": "https://www.youtube.com/embed/BJ7ggLzg2l8",
+    "category": "ALL",
+    "version": "JD2024",
+    "type": "solo"
+  },
+  {
+    "id": 5,
+    "title": "Thriller",
+    "artist": "Michael Jackson",
+    "duration": "5:57",
+    "thumbnail": "https://via.placeholder.com/300x300?text=Thriller",
+    "videoPreview": "https://www.youtube.com/embed/sOnqjkzntjQ",
+    "category": "ALL",
+    "version": "JD2023",
+    "type": "trio"
+  },
+  {
+    "id": 6,
+    "title": "Uptown Funk",
+    "artist": "Mark Ronson Ft. Bruno Mars",
+    "duration": "4:30",
+    "thumbnail": "https://via.placeholder.com/300x300?text=Uptown+Funk",
+    "videoPreview": "https://www.youtube.com/embed/OPf0YbXqDm0",
+    "category": "ALL",
+    "version": "JD2022",
+    "type": "dupla"
+  },
+  {
+    "id": 7,
+    "title": "Get Lucky",
+    "artist": "Daft Punk",
+    "duration": "4:09",
+    "thumbnail": "https://via.placeholder.com/300x300?text=Get+Lucky",
+    "videoPreview": "https://www.youtube.com/embed/5NV6Rdv1a3I",
+    "category": "ALL",
+    "version": "JD2024",
+    "type": "dupla"
+  },
+  {
+    "id": 8,
+    "title": "Blinding Lights",
+    "artist": "The Weeknd",
+    "duration": "3:20",
+    "thumbnail": "https://via.placeholder.com/300x300?text=Blinding+Lights",
+    "videoPreview": "https://www.youtube.com/embed/JH9L6ynkbtw",
+    "category": "ALL",
+    "version": "JD2023",
+    "type": "solo"
+  }
+]
