@@ -422,7 +422,7 @@ body { background: var(--app-bg); display:block; }
 .card-icon { font-size: 34px; margin-right:10px; }
 .card-title { font-size: 1.05em; }
 .menu-user-inline { align-items:flex-start; }
-.user-avatar { width:56px; height:56px; border-radius:999px; background:rgba(255,255,255,0.04); display:flex; align-items:center; justify-content:center; font-size:26px; cursor:pointer; }
+.user-avatar { width:84px; height:84px; border-radius:999px; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center; font-size:40px; cursor:pointer; box-shadow:0 6px 18px rgba(0,0,0,0.35); }
 .user-name { font-size:1em; }
 
 /* Bottom navigation (mobile app feel) */
@@ -443,7 +443,8 @@ body { background: var(--app-bg); display:block; }
 /* Responsive: emphasize mobile layout */
 @media (max-width: 800px) {
   .menu-grid { grid-template-columns: repeat(2, 1fr); }
-  .filters-sidebar { display:none; }
+  .filters-sidebar { display:block; flex: 0 0 auto; width: 100%; margin-bottom: 12px; }
+  .music-container { flex-direction: column; }
   .music-main { padding-bottom: 120px; }
   .auth-box, .menu-box { margin: 10px; padding:16px; }
 }

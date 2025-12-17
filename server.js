@@ -10,10 +10,36 @@ const { generateAccessToken, generateRefreshToken, verifyAccessToken } = require
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST']
+  },
+  transports: ['polling']
+});
 
 app.use(express.json());
+const isVercel = !!process.env.VERCEL;
+const DATA_DIR = process.env.DATA_DIR || (isVercel ? '/tmp' : path.join(__dirname, 'public'));
+const SONGS_PATH = path.join(DATA_DIR, 'songs.json');
+try {
+  const srcSongs = path.join(__dirname, 'public', 'songs.json');
+  if (!fs.existsSync(SONGS_PATH) && fs.existsSync(srcSongs)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.copyFileSync(srcSongs, SONGS_PATH);
+  }
+} catch {}
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(DATA_DIR, 'uploads')));
+app.get('/songs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  try {
+    const raw = fs.readFileSync(SONGS_PATH, 'utf8');
+    res.send(raw);
+  } catch (e) {
+    res.send('[]');
+  }
+});
 
 let queue = [];
 let nextId = 1;
@@ -23,7 +49,7 @@ io.on('connection', socket => {
   socket.emit('queue', queue);
   // enviar lista de músicas atual para novos clientes
   try {
-    const songsRaw = fs.readFileSync(path.join(__dirname, 'public', 'songs.json'), 'utf8');
+    const songsRaw = fs.readFileSync(SONGS_PATH, 'utf8');
     const songs = JSON.parse(songsRaw);
     socket.emit('songs', songs);
   } catch (err) {
@@ -130,7 +156,7 @@ io.on('connection', socket => {
       callback && callback({ success: false, error: 'Não autorizado' });
       return;
     }
-    const songsPath = path.join(__dirname, 'public', 'songs.json');
+    const songsPath = SONGS_PATH;
     try {
       const raw = fs.readFileSync(songsPath, 'utf8');
       const songs = JSON.parse(raw);
@@ -152,7 +178,7 @@ io.on('connection', socket => {
       callback && callback({ success: false, error: 'Não autorizado' });
       return;
     }
-    const songsPath = path.join(__dirname, 'public', 'songs.json');
+    const songsPath = SONGS_PATH;
     try {
       const raw = fs.readFileSync(songsPath, 'utf8');
       let songs = JSON.parse(raw);
@@ -172,7 +198,7 @@ io.on('connection', socket => {
       callback && callback({ success: false, error: 'Não autorizado' });
       return;
     }
-    const songsPath = path.join(__dirname, 'public', 'songs.json');
+    const songsPath = SONGS_PATH;
     try {
       const raw = fs.readFileSync(songsPath, 'utf8');
       const songs = JSON.parse(raw);
@@ -185,6 +211,37 @@ io.on('connection', socket => {
     } catch (err) {
       console.error('Erro updateSong:', err);
       callback && callback({ success: false, error: 'Erro ao atualizar música' });
+    }
+  });
+  socket.on('uploadAsset', ({ kind, filename, data }, callback) => {
+    const session = sessions[socket.id];
+    if (!session || session.role !== 'admin') {
+      callback && callback({ success: false, error: 'Não autorizado' });
+      return;
+    }
+    try {
+      const dir = path.join(DATA_DIR, 'uploads', kind === 'video' ? 'videos' : 'covers');
+      fs.mkdirSync(dir, { recursive: true });
+      const m = /^data:(.+);base64,/.exec(String(data || ''));
+      const mime = m ? m[1] : '';
+      const allowedC = ['image/png', 'image/jpeg', 'image/webp'];
+      const allowedV = ['video/mp4', 'video/webm'];
+      if (kind === 'cover' && !allowedC.includes(mime)) { callback && callback({ success: false, error: 'Tipo de imagem inválido' }); return; }
+      if (kind === 'video' && !allowedV.includes(mime)) { callback && callback({ success: false, error: 'Tipo de vídeo inválido' }); return; }
+      let ext = path.extname(filename || '').toLowerCase();
+      if (!ext) {
+        if (kind === 'cover') ext = mime === 'image/png' ? '.png' : mime === 'image/webp' ? '.webp' : '.jpg';
+        else ext = mime === 'video/webm' ? '.webm' : '.mp4';
+      }
+      const safeBase = String(filename || '').replace(/[^a-zA-Z0-9._-]/g, '_');
+      const finalName = `${Date.now()}_${safeBase}${ext}`;
+      const finalPath = path.join(dir, finalName);
+      const b64 = String(data || '').replace(/^data:.+;base64,/, '');
+      fs.writeFileSync(finalPath, Buffer.from(b64, 'base64'));
+      const url = `/uploads/${kind === 'video' ? 'videos' : 'covers'}/${finalName}`;
+      callback && callback({ success: true, url });
+    } catch (e) {
+      callback && callback({ success: false, error: 'Falha no upload' });
     }
   });
 
@@ -651,4 +708,10 @@ app.post('/api/refresh-token', (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
+if (process.env.VERCEL) {
+  module.exports = (req, res) => {
+    server.emit('request', req, res);
+  };
+} else {
+  server.listen(PORT, () => console.log(`✅ Server running on http://localhost:${PORT}`));
+}

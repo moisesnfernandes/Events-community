@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="api-base-url" content="">
   <title>Just Dance Now - Queue System</title>
   <link rel="stylesheet" href="styles.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
@@ -62,7 +63,6 @@
               <div id="menuUserName" class="user-name">Olá, Jogador!</div>
               <div style="display:flex;gap:8px;margin-top:6px;">
                 <button class="btn btn-primary btn-small" onclick="openProfile()">Perfil</button>
-                <button class="btn btn-logout" onclick="handleLogout()">Sair</button>
               </div>
             </div>
           </div>
@@ -88,10 +88,12 @@
           </div>
         </div>
         <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <input id="eventCodeInput" placeholder="Código do Evento (ex: TEST123)" style="flex:1; padding:8px; border-radius:8px; min-width:200px;" />
-          <button class="btn btn-primary" onclick="setEventByCode()">Entrar no Evento</button>
+          <div id="menuEventInfo" style="flex:1; padding:8px; border-radius:8px; min-width:200px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,212,255,0.25); color:#00ffff; font-weight:700;">Evento: —</div>
+          <button class="btn btn-primary" onclick="openEventModal()">Selecionar Evento</button>
         </div>
-        <div id="tournamentsList" style="margin-top:12px; padding:8px; border-radius:8px; background:rgba(255,255,255,0.02);"></div>
+        <div style="margin-top:12px;">
+          <button class="btn btn-secondary" onclick="openTournaments()">Abrir Campeonatos</button>
+        </div>
       </div>
     </div>
   </div>
@@ -102,10 +104,12 @@
     <button onclick="goToMusicSelect()" title="Música"><span class="btn-icon">🎵</span><span class="btn-label">Músicas</span></button>
     <button onclick="goToQueue()" title="Fila"><span class="btn-icon">👥</span><span class="btn-label">Fila</span></button>
     <button onclick="openLeaderboard()" title="Ranking"><span class="btn-icon">🏆</span><span class="btn-label">Ranking</span></button>
+    <button onclick="openTournaments()" title="Campeonatos"><span class="btn-icon">🏟️</span><span class="btn-label">Campeonatos</span></button>
+    <button onclick="openProfile()" title="Perfil"><span class="btn-icon">👤</span><span class="btn-label">Perfil</span></button>
   </div>
 
   <!-- FLOATING ACTION BUTTON -->
-  <button class="fab" onclick="quickJoin()" title="Entrar rápido">＋</button>
+  <!-- removido -->
 
   <!-- STAFF SCREEN -->
   <div id="staffScreen" class="screen">
@@ -114,18 +118,20 @@
       <button class="nav-btn back-btn" onclick="goToMenu()">← Voltar</button>
     </div>
     <div class="music-main">
-        <div class="music-grid-container" style="max-width:100%;">
-          <div style="display:flex;flex-direction:column;gap:12px;align-items:flex-start;width:100%;">
-            <div id="staffNextPlayer" class="staff-next-player" style="width:100%;"></div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <button class="btn btn-play-big" onclick="staffCallNext()">▶️ Chamar Próximo</button>
-              <button class="btn btn-secondary" onclick="renderStaffQueue()">Atualizar Fila</button>
-              <button class="btn btn-logout" onclick="goToMenu()">Voltar</button>
-            </div>
+      <div style="display:flex; flex-direction:column; gap:16px; width:100%;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:12px;">
+          <div id="staffNextPlayer" class="staff-next-player" style="width:100%; border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25);"></div>
+          <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25); display:flex; flex-direction:column; gap:8px;">
+            <div style="font-weight:900;color:#00ffff;">Controles</div>
+            <button class="btn btn-play-big" onclick="staffCallNext()">▶️ Chamar Próximo</button>
+            <button class="btn btn-secondary" onclick="renderStaffQueue()">Atualizar Fila</button>
+            <button class="btn btn-logout" onclick="goToMenu()">Voltar</button>
           </div>
         </div>
-
-        <h3 class="music-section-title">Fila Atual (Staff)</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 class="music-section-title">Fila Atual (Staff)</h3>
+          <div style="color:#00ffff; font-weight:800;">Total: <span id="staffQueueCount">0</span></div>
+        </div>
         <ul id="staffQueueList" class="queue-list"></ul>
       </div>
     </div>
@@ -146,6 +152,19 @@
     </div>
   </div>
 
+  <!-- EVENT CODE MODAL -->
+  <div id="eventModal" class="modal" style="display:none;">
+    <div class="modal-backdrop" onclick="closeEventModal()"></div>
+    <div class="modal-content">
+      <h3>Entrar em Evento</h3>
+      <div class="form-group"><input id="eventCodeModalInput" placeholder="Código (ex: TEST123)" style="text-transform:uppercase;"></div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px;">
+        <button class="btn btn-secondary" onclick="closeEventModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitEventCodeModal()">Entrar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ADMIN SCREEN -->
   <div id="adminScreen" class="screen">
     <div class="music-navbar">
@@ -153,81 +172,227 @@
       <button class="nav-btn back-btn" onclick="goToMenu()">← Voltar</button>
     </div>
     <div class="music-main">
-      <div class="music-grid-container">
-        <div class="admin-tabs">
-          <div class="admin-tab active" data-tab="users" onclick="showAdminTab('users')">Usuários</div>
-          <div class="admin-tab" data-tab="songs" onclick="showAdminTab('songs')">Músicas</div>
-          <div class="admin-tab" data-tab="settings" onclick="showAdminTab('settings')">Configurações</div>
-        </div>
-
-        <div id="adminTabUsers" class="admin-tab-panel">
-          <div style="display:flex; gap:12px; margin-bottom:16px; align-items:flex-start; flex-wrap:wrap;">
-            <div style="flex:1; min-width:300px;">
-              <h4 style="margin-bottom:8px;">Criar Usuário</h4>
-              <div class="form-group"><input id="adminNewUser" placeholder="Novo usuário"></div>
-              <div class="form-group"><input id="adminNewPass" placeholder="Senha"></div>
-              <div class="form-group"><select id="adminNewRole"><option value="user">user</option><option value="staff">staff</option><option value="admin">admin</option></select></div>
-              <button class="btn btn-secondary" onclick="adminCreateUser()">Criar Usuário</button>
-              <div class="auth-error" id="adminUserMsg"></div>
-            </div>
-
-            <div style="flex:1; min-width:280px;">
-              <h4 style="margin-bottom:8px;">Fila Atual (Admin)</h4>
-              <button class="btn btn-queue-big" onclick="clearQueue()">Limpar Fila (Admin)</button>
-              <ul id="adminQueueList" class="queue-list" style="margin-top:12px;"></ul>
-            </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+        <button class="btn btn-secondary" onclick="goToAdminQueue()">Fila</button>
+        <button class="btn btn-secondary" onclick="goToAdminUsers()">Usuários</button>
+        <button class="btn btn-secondary" onclick="goToAdminAddSong()">Adicionar Música</button>
+        <button class="btn btn-secondary" onclick="goToAdminCatalog()">Catálogo</button>
+        <button class="btn btn-secondary" onclick="goToAdminSettings()">Configurações</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:16px; width:100%;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px;">
+          <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25);">
+            <div style="font-weight:900;color:#00ffff;">Usuários</div>
+            <div id="adminUserCount" style="font-size:1.4em; font-weight:900; color:#ffde59;">—</div>
           </div>
-
-          <h3 class="music-section-title">Usuários</h3>
-          <ul id="adminUsersList" class="queue-list"></ul>
-        </div>
-
-        <div id="adminTabSongs" class="admin-tab-panel" style="display:none;">
-          <div style="display:flex; gap:12px; margin-bottom:16px; align-items:flex-start; flex-wrap:wrap;">
-            <div style="flex:1; min-width:280px;">
-              <h4 style="margin-bottom:8px;">Adicionar Música</h4>
-              <div class="form-group"><input id="adminSongTitle" placeholder="Título"></div>
-              <div class="form-group"><input id="adminSongArtist" placeholder="Artista"></div>
-              <div class="form-group"><input id="adminSongDuration" placeholder="Duração (ex: 03:45)"></div>
-              <div class="form-group"><input id="adminSongThumb" placeholder="URL da thumbnail"></div>
-              <div class="form-group"><input id="adminSongPreview" placeholder="URL do preview (embed)"></div>
-              <div class="form-group"><select id="adminSongVersion"><option value="JD2024">Just Dance 2024</option><option value="JD2023">Just Dance 2023</option><option value="JD2022">Just Dance 2022</option></select></div>
-              <div class="form-group"><select id="adminSongType"><option value="solo">Solo</option><option value="dupla">Dupla</option><option value="trio">Trio</option><option value="quarteto">Quarteto</option></select></div>
-              <div class="form-group"><select id="adminSongCategory"><option value="ALL">ALL</option><option value="NEW">NEW</option></select></div>
-              <button class="btn btn-primary" onclick="adminAddSong()">Adicionar Música</button>
-              <div class="auth-error" id="adminSongMsg"></div>
-            </div>
-
-            <div style="flex:1; min-width:300px;">
-              <h4 style="margin-bottom:8px;">Catálogo de Músicas</h4>
-              <ul id="adminSongsList" class="music-grid" style="list-style:none; padding:0;"></ul>
-            </div>
+          <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25);">
+            <div style="font-weight:900;color:#00ffff;">Músicas</div>
+            <div id="adminSongCount" style="font-size:1.4em; font-weight:900; color:#ffde59;">—</div>
+          </div>
+          <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25);">
+            <div style="font-weight:900;color:#00ffff;">Eventos</div>
+            <div id="adminEventCount" style="font-size:1.4em; font-weight:900; color:#ffde59;">—</div>
+          </div>
+          <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25);">
+            <div style="font-weight:900;color:#00ffff;">Campeonatos</div>
+            <div id="adminTournamentCount" style="font-size:1.4em; font-weight:900; color:#ffde59;">—</div>
+          </div>
+          <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25);">
+            <div style="font-weight:900;color:#00ffff;">Fila</div>
+            <div id="adminQueueCount" style="font-size:1.4em; font-weight:900; color:#ffde59;">—</div>
           </div>
         </div>
+        <div style="margin-top:12px; color:#bbb;">Use os botões acima para acessar cada página do painel.</div>
+      </div>
+    </div>
+  </div>
 
-        <div id="adminTabSettings" class="admin-tab-panel" style="display:none;">
-          <h3 class="music-section-title">Configurações do Evento</h3>
-          <div style="display:flex;flex-direction:column;gap:12px;max-width:600px;">
-            <div class="form-group"><input id="eventNameInput" placeholder="Nome do Evento"></div>
-            <div class="form-group"><input id="eventMaxPlayersInput" placeholder="Máx. jogadores (opcional)"></div>
-            <div class="form-group"><input id="versionOrderInput" placeholder="Ordem das versões (ex: JD2024,JD2023,JD2022)"></div>
+  <!-- ADMIN QUEUE SCREEN -->
+  <div id="adminQueueScreen" class="screen">
+    <div class="music-navbar">
+      <h1 class="music-title">Admin — Fila</h1>
+      <div>
+        <button class="nav-btn back-btn" onclick="goToAdmin()">← Painel</button>
+        <button class="nav-btn back-btn" onclick="goToMenu()">🏠 Menu</button>
+      </div>
+    </div>
+    <div class="music-main">
+      <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25);">
+        <div style="font-weight:900;color:#00ffff; margin-bottom:8px;">Fila (Admin)</div>
+        <button class="btn btn-queue-big" onclick="clearQueue()">Limpar Fila</button>
+        <ul id="adminQueueList" class="queue-list" style="margin-top:12px;"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN USERS SCREEN -->
+  <div id="adminUsersScreen" class="screen">
+    <div class="music-navbar">
+      <h1 class="music-title">Admin — Usuários</h1>
+      <div>
+        <button class="nav-btn back-btn" onclick="goToAdmin()">← Painel</button>
+        <button class="nav-btn back-btn" onclick="goToMenu()">🏠 Menu</button>
+      </div>
+    </div>
+    <div class="music-main">
+      <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25);">
+        <div style="font-weight:900;color:#00ffff; margin-bottom:8px;">Usuários</div>
+        <div class="form-group"><input id="adminNewUser" placeholder="Novo usuário"></div>
+        <div class="form-group"><input id="adminNewPass" placeholder="Senha"></div>
+        <div class="form-group"><select id="adminNewRole"><option value="user">user</option><option value="staff">staff</option><option value="admin">admin</option></select></div>
+        <button class="btn btn-secondary" onclick="adminCreateUser()">Criar Usuário</button>
+        <div class="auth-error" id="adminUserMsg"></div>
+        <h4 style="margin-top:12px;">Lista de Usuários</h4>
+        <ul id="adminUsersList" class="queue-list"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN ADD SONG SCREEN -->
+  <div id="adminAddSongScreen" class="screen">
+    <div class="music-navbar">
+      <h1 class="music-title">Admin — Adicionar Música</h1>
+      <div>
+        <button class="nav-btn back-btn" onclick="goToAdmin()">← Painel</button>
+        <button class="nav-btn back-btn" onclick="goToMenu()">🏠 Menu</button>
+      </div>
+    </div>
+    <div class="music-main">
+      <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25); max-width:900px; margin:0 auto;">
+        <div style="font-weight:900;color:#00ffff; margin-bottom:8px;">Adicionar Música</div>
+        <div class="form-group"><input id="adminSongTitle" placeholder="Título"></div>
+        <div class="form-group"><input id="adminSongArtist" placeholder="Artista"></div>
+        <div class="form-group"><input id="adminSongDuration" placeholder="Duração (ex: 03:45)"></div>
+        <div class="form-group"><input id="adminSongThumb" placeholder="URL da thumbnail" oninput="updateAdminAddPreviews()"><div style="display:flex;gap:8px;margin-top:6px;"><input type="file" id="adminSongThumbFile" accept=".png,.jpg,.jpeg,.webp"><button class="btn btn-secondary" onclick="adminUploadCover('adminSongThumbFile','adminSongThumb')">Enviar Capa</button></div></div>
+        <div class="form-group"><input id="adminSongPreview" placeholder="URL do preview (embed ou mp4)" oninput="updateAdminAddPreviews()"><div style="display:flex;gap:8px;margin-top:6px;"><input type="file" id="adminSongVideoFile" accept=".mp4,.webm"><button class="btn btn-secondary" onclick="adminUploadVideo('adminSongVideoFile','adminSongPreview')">Enviar Vídeo</button></div></div>
+        <div style="display:flex;gap:8px;align-items:center;margin:8px 0;">
+          <img id="adminAddThumbPreview" src="" style="width:80px;height:80px;object-fit:cover;border-radius:8px;display:none;">
+          <video id="adminAddVideoPreview" controls style="width:200px;height:112px;border-radius:8px;display:none;"></video>
+        </div>
+        <div class="form-group"><select id="adminSongVersion"><option value="JD2024">Just Dance 2024</option><option value="JD2023">Just Dance 2023</option><option value="JD2022">Just Dance 2022</option></select></div>
+        <div class="form-group"><select id="adminSongType"><option value="solo">Solo</option><option value="dupla">Dupla</option><option value="trio">Trio</option><option value="quarteto">Quarteto</option></select></div>
+        <div class="form-group"><select id="adminSongCategory"><option value="ALL">ALL</option><option value="NEW">NEW</option></select></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="adminAddSong()">Adicionar Música</button>
+          <button class="btn btn-secondary" onclick="resetAdminAddForm()">Limpar</button>
+        </div>
+        <div class="auth-error" id="adminSongMsg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN CATALOG SCREEN -->
+  <div id="adminCatalogScreen" class="screen">
+    <div class="music-navbar">
+      <h1 class="music-title">Admin — Catálogo</h1>
+      <div>
+        <button class="nav-btn back-btn" onclick="goToAdmin()">← Painel</button>
+        <button class="nav-btn back-btn" onclick="goToMenu()">🏠 Menu</button>
+      </div>
+    </div>
+    <div class="music-main">
+      <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25);">
+        <div style="font-weight:900;color:#00ffff; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+          <span>Catálogo de Músicas</span>
+          <span style="color:#ffde59;font-weight:900;">Filtradas: <span id="adminSongFilterCount">—</span></span>
+        </div>
+        <div style="margin-bottom:12px; padding:10px; border:1px dashed rgba(0,212,255,0.25); border-radius:10px;">
+          <div style="font-weight:900;color:#00ffff; margin-bottom:8px;">Adicionar Música Rápido</div>
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:8px;">
+            <input id="adminSongTitleCat" placeholder="Título">
+            <input id="adminSongArtistCat" placeholder="Artista">
+            <input id="adminSongDurationCat" placeholder="Duração (ex: 03:45)">
+            <select id="adminSongVersionCat"><option value="">Versão</option></select>
+            <select id="adminSongTypeCat">
+              <option value="solo">Solo</option>
+              <option value="dupla">Dupla</option>
+              <option value="trio">Trio</option>
+              <option value="quarteto">Quarteto</option>
+            </select>
+            <select id="adminSongCategoryCat">
+              <option value="ALL">ALL</option>
+              <option value="NEW">NEW</option>
+            </select>
+            <input id="adminSongThumbCat" placeholder="URL da thumbnail" oninput="updateAdminAddPreviewsCat()">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <input type="file" id="adminSongThumbFileCat" accept=".png,.jpg,.jpeg,.webp">
+              <button class="btn btn-secondary" onclick="adminUploadCover('adminSongThumbFileCat','adminSongThumbCat')">Enviar Capa</button>
+            </div>
+            <input id="adminSongPreviewCat" placeholder="URL do preview (embed ou mp4)" oninput="updateAdminAddPreviewsCat()">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <input type="file" id="adminSongVideoFileCat" accept=".mp4,.webm">
+              <button class="btn btn-secondary" onclick="adminUploadVideo('adminSongVideoFileCat','adminSongPreviewCat')">Enviar Vídeo</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px;">
+            <img id="adminAddThumbPreviewCat" src="" style="width:80px;height:80px;object-fit:cover;border-radius:8px;display:none;">
+            <video id="adminAddVideoPreviewCat" controls style="width:200px;height:112px;border-radius:8px;display:none;"></video>
+            <button class="btn btn-primary" onclick="adminAddSongFromCatalog()">Adicionar</button>
+            <div class="auth-error" id="adminSongMsgCat"></div>
+          </div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+          <input id="adminSongSearch" placeholder="Buscar título/artista" oninput="renderAdminSongs()" style="flex:1; min-width:160px; padding:8px; border-radius:8px;">
+          <select id="adminSongFilterVersion" onchange="renderAdminSongs()" style="min-width:140px;">
+            <option value="">Versão</option>
+          </select>
+          <select id="adminSongFilterType" onchange="renderAdminSongs()" style="min-width:140px;">
+            <option value="">Tipo</option>
+            <option value="solo">Solo</option>
+            <option value="dupla">Dupla</option>
+            <option value="trio">Trio</option>
+            <option value="quarteto">Quarteto</option>
+          </select>
+        </div>
+        <ul id="adminSongsList" class="music-grid" style="list-style:none; padding:0;"></ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADMIN SETTINGS SCREEN -->
+  <div id="adminSettingsScreen" class="screen">
+    <div class="music-navbar">
+      <h1 class="music-title">Admin — Configurações</h1>
+      <div>
+        <button class="nav-btn back-btn" onclick="goToAdmin()">← Painel</button>
+        <button class="nav-btn back-btn" onclick="goToMenu()">🏠 Menu</button>
+      </div>
+    </div>
+    <div class="music-main">
+      <div style="border:2px solid rgba(0,212,255,0.25); border-radius:12px; padding:12px; background:rgba(0,0,0,0.25);">
+        <div style="font-weight:900;color:#00ffff; margin-bottom:8px;">Configurações / Eventos / Campeonatos</div>
+        <div style="display:flex;flex-direction:column;gap:12px;max-width:900px;">
+          <h4>Versões do Jogo</h4>
+          <div class="form-group"><input id="eventNameInput" placeholder="Nome do Evento"></div>
+          <div class="form-group"><input id="eventMaxPlayersInput" placeholder="Máx. jogadores (opcional)"></div>
+          <div class="form-group"><input id="versionOrderInput" placeholder="Ordem das versões (ex: JD2024,JD2023,JD2022)"></div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <input id="adminNewVersion" placeholder="Nova versão (ex: JD2025)" style="flex:1; min-width:200px;">
+            <button class="btn btn-secondary" onclick="addVersion()">Adicionar Versão</button>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn btn-secondary" onclick="saveVersionOrder()">Salvar Ordem de Versões</button>
             <button class="btn btn-primary" onclick="saveEventSettings()">Salvar Configurações</button>
-            <div id="eventSettingsMsg" class="auth-error"></div>
-            <hr />
-            <h4>Criar Evento</h4>
-            <div class="form-group"><input id="adminEventCode" placeholder="Código do Evento (único)"></div>
-            <div class="form-group"><input id="adminEventName" placeholder="Nome do Evento"></div>
-            <div class="form-group"><input id="adminEventMaxPlayers" placeholder="Máx jogadores (opcional)" type="number"></div>
-            <div style="display:flex;gap:8px;"><button class="btn btn-primary" onclick="createEvent()">Criar Evento</button><button class="btn btn-secondary" onclick="loadEvents()">Atualizar Lista</button></div>
-            <div id="adminEventsList" style="margin-top:12px"></div>
-            <hr />
-            <h4>Criar Campeonato (para o evento selecionado)</h4>
-            <div class="form-group"><input id="adminTournamentName" placeholder="Nome do Campeonato"></div>
-            <div class="form-group"><select id="adminTournamentType"><option value="single_elimination">Single Elimination</option><option value="double_elimination">Double Elimination</option><option value="round_robin">Round Robin</option></select></div>
-            <div class="form-group"><input id="adminTournamentMaxParticipants" placeholder="Máx participantes (opcional)" type="number"></div>
-            <div style="display:flex;gap:8px;"><button class="btn btn-primary" onclick="createTournament()">Criar Campeonato</button><button class="btn btn-secondary" onclick="loadTournamentsByEvent()">Atualizar</button></div>
-            <div id="adminTournamentsList" style="margin-top:12px"></div>
+          </div>
+          <div id="eventSettingsMsg" class="auth-error"></div>
+          <hr />
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:12px;">
+            <div>
+              <h4>Criar Evento</h4>
+              <div class="form-group"><input id="adminEventCode" placeholder="Código do Evento (único)"></div>
+              <div class="form-group"><input id="adminEventName" placeholder="Nome do Evento"></div>
+              <div class="form-group"><input id="adminEventMaxPlayers" placeholder="Máx jogadores (opcional)" type="number"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="createEvent()">Criar Evento</button><button class="btn btn-secondary" onclick="loadEvents()">Atualizar Lista</button></div>
+              <div id="adminEventsList" style="margin-top:12px"></div>
+            </div>
+            <div>
+              <h4>Criar Campeonato</h4>
+              <div class="form-group"><input id="adminTournamentName" placeholder="Nome do Campeonato"></div>
+              <div class="form-group"><select id="adminTournamentType"><option value="single_elimination">Single Elimination</option><option value="double_elimination">Double Elimination</option><option value="round_robin">Round Robin</option></select></div>
+              <div class="form-group"><input id="adminTournamentMaxParticipants" placeholder="Máx participantes (opcional)" type="number"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-primary" onclick="createTournament()">Criar Campeonato</button><button class="btn btn-secondary" onclick="loadTournamentsByEvent()">Atualizar</button></div>
+              <div id="adminTournamentsList" style="margin-top:12px"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -285,6 +450,10 @@
       <div style="background:rgba(255,255,255,0.02); padding:12px; border-radius:12px;">
         <div style="font-weight:800;color:#ffde59;margin-bottom:8px">Músicas favoritas</div>
         <div id="profileFavs" style="color:rgba(255,255,255,0.9)">—</div>
+      </div>
+
+      <div style="margin-top:24px; display:flex; justify-content:flex-end;">
+        <button class="btn btn-logout" onclick="handleLogout()">Sair</button>
       </div>
 
     </div>
@@ -348,6 +517,7 @@
           <div class="preview-container">
             <div class="preview-video">
               <iframe id="videoPreview" src="" allowfullscreen></iframe>
+              <video id="videoPreviewVideo" controls style="display:none;width:100%;height:100%;"></video>
             </div>
             
             <div class="preview-details">
@@ -423,25 +593,38 @@
     </div>
   </div>
 
-  <!-- LEADERBOARD SECTION (adiciona em adminScreen e menuScreen) -->
-  <div id="leaderboardPanel" class="leaderboard-panel" style="display: none;">
-    <div class="leaderboard-header">
-      <h2>🏆 Ranking</h2>
-      <button class="btn-close" onclick="closeLeaderboard()">✕</button>
+  <!-- LEADERBOARD SCREEN -->
+  <div id="leaderboardScreen" class="screen">
+    <div class="music-navbar">
+      <h1 class="music-title">🏆 Ranking</h1>
+      <button class="nav-btn back-btn" onclick="goToMenu()">← Voltar</button>
     </div>
-    <div class="leaderboard-content">
-      <table class="leaderboard-table">
-        <thead>
-          <tr>
-            <th>Posição</th>
-            <th>Jogador</th>
-            <th>Pontos</th>
-          </tr>
-        </thead>
-        <tbody id="leaderboardBody">
-          <tr><td colspan="3">Carregando...</td></tr>
-        </tbody>
-      </table>
+    <div class="music-main">
+      <div style="width:100%;">
+        <table class="leaderboard-table" style="width:100%;">
+          <thead>
+            <tr>
+              <th>Posição</th>
+              <th>Jogador</th>
+              <th>Pontos</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboardBody">
+            <tr><td colspan="3">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOURNAMENTS SCREEN -->
+  <div id="tournamentsScreen" class="screen">
+    <div class="music-navbar">
+      <h1 class="music-title">🏟️ Campeonatos</h1>
+      <button class="nav-btn back-btn" onclick="goToMenu()">← Voltar</button>
+    </div>
+    <div class="music-main">
+      <div id="tournamentsList" style="margin-top:12px; padding:8px; border-radius:8px; background:rgba(255,255,255,0.02); width:100%;"></div>
     </div>
   </div>
 
